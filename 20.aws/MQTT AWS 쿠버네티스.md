@@ -189,7 +189,7 @@ https://youtu.be/uGhCjaExw0M?si=L7S418mQCznhZnNE
   - 키페어 : demo-key
   - 네트워크
     -  VPC: Default VPC
-    - 서브넷 : ap-northeast=2a
+    - 서브넷 : ap-northeast-2a
     - 보안그룹 : 기존 보안 그룹 선택 => demo-bastion-sg
   - 스토리지 : 8G, gp3
   - 인스턴스 생성 후 ubuntu 유저로 로그인
@@ -309,47 +309,751 @@ https://youtu.be/uGhCjaExw0M?si=L7S418mQCznhZnNE
 
       
 
+## 2. EKS 생성하기
+
+### eksctl 명령으로 EKS 생성
+
+- 클러스터 이름 : demo-eks
+
+- 리전 : ap-northeast-2
+
+- 노드 그룹 이름 : demo-ng
+
+  - Node 인스턴스 타입 : 
+    - t3.medium => 이건 free trier가 아닌거 같아 확인 필요
+  - 노드 수 : 2
+  - 노트 볼륨 크기 : 20G
+  - 노드그룹 적용 가용 영역 : ap-northeast=2a, ap-northeast=2c. 생량 시 전체 가용영역 사용
+
+- OpenID Connect (OIDC) 공급자 자동 설정 : Kubernetes의 서비스 계정과 AWS IAM 역할을 연결할 수 있도록 OIDC를 활성화
+
+- ```bash
+  $ eksctl create cluster \
+  --name demo-eks2 \
+  --region ap-northeast-2 \
+  --with-oidc \
+  --nodegroup-name demo-ng \
+  --zones ap-northeast-2a,ap-northeast-2c \
+  --nodes 2 \
+  --node-type t3.medium \
+  --node-volume-size=20 \
+  --managed
+  2024-11-15 05:49:57 [ℹ]  eksctl version 0.194.0
+  2024-11-15 05:49:57 [ℹ]  using region ap-northeast-2
+  2024-11-15 05:49:57 [ℹ]  subnets for ap-northeast-2a - public:192.168.0.0/19 private:192.168.64.0/19
+  2024-11-15 05:49:57 [ℹ]  subnets for ap-northeast-2c - public:192.168.32.0/19 private:192.168.96.0/19
+  2024-11-15 05:49:57 [ℹ]  nodegroup "demo-ng" will use "" [AmazonLinux2/1.30]
+  2024-11-15 05:49:57 [ℹ]  using Kubernetes version 1.30
+  2024-11-15 05:49:57 [ℹ]  creating EKS cluster "demo-eks" in "ap-northeast-2" region with managed nodes
+  2024-11-15 05:49:57 [ℹ]  will create 2 separate CloudFormation stacks for cluster itself and the initial managed nodegroup
+  2024-11-15 05:49:57 [ℹ]  if you encounter any issues, check CloudFormation console or try 'eksctl utils describe-stacks --region=ap-northeast-2 --cluster=demo-eks'
+  2024-11-15 05:49:57 [ℹ]  Kubernetes API endpoint access will use default of {publicAccess=true, privateAccess=false} for cluster "demo-eks" in "ap-northeast-2"
+  2024-11-15 05:49:57 [ℹ]  CloudWatch logging will not be enabled for cluster "demo-eks" in "ap-northeast-2"
+  2024-11-15 05:49:57 [ℹ]  you can enable it with 'eksctl utils update-cluster-logging --enable-types={SPECIFY-YOUR-LOG-TYPES-HERE (e.g. all)} --region=ap-northeast-2 --cluster=demo-eks'
+  2024-11-15 05:49:57 [ℹ]  default addons vpc-cni, kube-proxy, coredns were not specified, will install them as EKS addons
+  2024-11-15 05:49:57 [ℹ]  
+  2 sequential tasks: { create cluster control plane "demo-eks", 
+      2 sequential sub-tasks: { 
+          5 sequential sub-tasks: { 
+              1 task: { create addons },
+              wait for control plane to become ready,
+              associate IAM OIDC provider,
+              no tasks,
+              update VPC CNI to use IRSA if required,
+          },
+          create managed nodegroup "demo-ng",
+      } 
+  }
+  2024-11-15 05:49:57 [ℹ]  building cluster stack "eksctl-demo-eks-cluster"
+  2024-11-15 05:49:58 [ℹ]  deploying stack "eksctl-demo-eks-cluster"
+  2024-11-15 05:50:58 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-cluster"
+  2024-11-15 05:51:58 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-cluster"
+  2024-11-15 05:52:58 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-cluster"
+  2024-11-15 05:53:58 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-cluster"
+  2024-11-15 05:54:58 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-cluster"
+  2024-11-15 05:55:58 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-cluster"
+  2024-11-15 05:56:58 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-cluster"
+  2024-11-15 05:57:58 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-cluster"
+  2024-11-15 05:58:00 [!]  recommended policies were found for "vpc-cni" addon, but since OIDC is disabled on the cluster, eksctl cannot configure the requested permissions; the recommended way to provide IAM permissions for "vpc-cni" addon is via pod identity associations; after addon creation is completed, add all recommended policies to the config file, under `addon.PodIdentityAssociations`, and run `eksctl update addon`
+  2024-11-15 05:58:00 [ℹ]  creating addon
+  2024-11-15 05:58:00 [ℹ]  successfully created addon
+  2024-11-15 05:58:00 [ℹ]  creating addon
+  2024-11-15 05:58:01 [ℹ]  successfully created addon
+  2024-11-15 05:58:01 [ℹ]  creating addon
+  2024-11-15 05:58:01 [ℹ]  successfully created addon
+  2024-11-15 06:00:04 [ℹ]  deploying stack "eksctl-demo-eks-addon-vpc-cni"
+  2024-11-15 06:00:04 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-addon-vpc-cni"
+  2024-11-15 06:00:34 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-addon-vpc-cni"
+  2024-11-15 06:00:34 [ℹ]  updating addon
+  2024-11-15 06:00:44 [ℹ]  addon "vpc-cni" active
+  2024-11-15 06:00:44 [ℹ]  building managed nodegroup stack "eksctl-demo-eks-nodegroup-demo-ng"
+  2024-11-15 06:00:44 [ℹ]  deploying stack "eksctl-demo-eks-nodegroup-demo-ng"
+  2024-11-15 06:00:45 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-nodegroup-demo-ng"
+  2024-11-15 06:01:15 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-nodegroup-demo-ng"
+  2024-11-15 06:01:54 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-nodegroup-demo-ng"
+  2024-11-15 06:02:27 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-nodegroup-demo-ng"
+  2024-11-15 06:03:10 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-nodegroup-demo-ng"
+  2024-11-15 06:05:05 [ℹ]  waiting for CloudFormation stack "eksctl-demo-eks-nodegroup-demo-ng"
+  2024-11-15 06:05:05 [ℹ]  waiting for the control plane to become ready
+  2024-11-15 06:05:07 [✔]  saved kubeconfig as "/home/ubuntu/.kube/config"
+  2024-11-15 06:05:07 [ℹ]  no tasks
+  2024-11-15 06:05:07 [✔]  all EKS cluster resources for "demo-eks" have been created
+  2024-11-15 06:05:07 [✔]  created 0 nodegroup(s) in cluster "demo-eks"
+  2024-11-15 06:05:07 [ℹ]  nodegroup "demo-ng" has 2 node(s)
+  2024-11-15 06:05:07 [ℹ]  node "ip-192-168-13-127.ap-northeast-2.compute.internal" is ready
+  2024-11-15 06:05:07 [ℹ]  node "ip-192-168-38-201.ap-northeast-2.compute.internal" is ready
+  2024-11-15 06:05:07 [ℹ]  waiting for at least 2 node(s) to become ready in "demo-ng"
+  2024-11-15 06:05:07 [ℹ]  nodegroup "demo-ng" has 2 node(s)
+  2024-11-15 06:05:07 [ℹ]  node "ip-192-168-13-127.ap-northeast-2.compute.internal" is ready
+  2024-11-15 06:05:07 [ℹ]  node "ip-192-168-38-201.ap-northeast-2.compute.internal" is ready
+  2024-11-15 06:05:07 [✔]  created 1 managed nodegroup(s) in cluster "demo-eks"
+  2024-11-15 06:05:08 [ℹ]  kubectl command should work with "/home/ubuntu/.kube/config", try 'kubectl get nodes'
+  2024-11-15 06:05:08 [✔]  EKS cluster "demo-eks" in "ap-northeast-2" region is ready
+  ```
+
+  
+
+##### CloudFormation에서 어떤 스택이 생성되고 있는지 확인이 가능
+
+![image-20241115145225109](assets/image-20241115145225109.png)
+
+
+
+##### VPC 세부 정보
+
+![image-20241115154516734](assets/image-20241115154516734.png)
+
+![image-20241115154604869](assets/image-20241115154604869.png)
+
+
+
+### 설치 확인 및 기본 환경 구성
+
+- 설치 확인
+
+  ```bash
+  # 워커노드 정보 보기
+  $ kubectl get nodes
+  NAME                                                STATUS   ROLES    AGE   VERSION
+  ip-192-168-13-127.ap-northeast-2.compute.internal   Ready    <none>   45m   v1.30.4-eks-a737599
+  ip-192-168-38-201.ap-northeast-2.compute.internal   Ready    <none>   46m   v1.30.4-eks-a737599
+  ```
+
+  
+
+- EKS에서 애플리케이션 배포 실습
+
+  ```bash
+  # CLI 명령어 완성기능 추가
+  $ source <(kubectl completion bash)
+  $ echo "source <(kubectl completion bash)" >> ~/.bashrc
+  
+  #Pod 배포 TEST. nginx 컨테이너 5개 실행하고 결과 확인
+  $ kubectl create deployment webtest --image=nginx:1.14 --port=80 --replicas=5
+  $ kubectl get pods -o wide
+  
+  #nginx 웹서버에 클라이언트 접속 가능하도록 구성하고 간단히 TEST
+  $ kubectl expose deployment webtest --port=80 --type=LoadBalancer
+  $ kubectl get services
+  
+  #1분 정도 후에 웹브라우저를 통해 웹서버 연결되는지 확인
+  http://ac51d2303af38435ba244f34a1d69d56-1736031328.ap-northeast-2.elb.amazonaws.com/
+  
+  #서비스 중지
+  # 1. 로드밸런서 삭제
+  # 2. Service 및 deployment 삭제
+  $ kubectl delete svc website
+  $ kubectl delete deployments.apps webtest
+  
+  #etc svc 변경 방법 type을 vi에서 LoadBalancer를 다른 걸로 변경하고 :wq로 저장하고 나오면 적용되어 있음 신기
+  $ kubectl edit svc webtest
+  ...
+  spec:
+    allocateLoadBalancerNodePorts: true
+    clusterIP: 10.100.252.178
+    clusterIPs:
+    - 10.100.252.178
+    externalTrafficPolicy: Cluster
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - nodePort: 31563
+      port: 80
+      protocol: TCP
+      targetPort: 80
+    selector:
+      app: webtest
+    sessionAffinity: None
+    type: LoadBalancer
+  ...
+  ```
 
 
 
 
 
+**로드밸런서 생성** 
+
+여기에 생성되는데 깜빡하고 그냥 삭제 해버림...
+
+로드 밸런서는 명령어로 삭제해도 남아 있다고 하며, 이걸 삭제 해도 서비스는 살아 있음
+
+독립적인 관계로 보임
+
+![image-20241115161501704](assets/image-20241115161501704.png)
 
 
 
+**로드밸런서 접속**
+
+![image-20241115160731660](assets/image-20241115160731660.png)
+
+## aws-load-balancer-controller 배포
+
+### aws-load-balancer-controller 배포
+
+- AWS Ingress Controller
+- Kubernetes 클러스터에서 AWS Elastic Load Balancers (ALB 및 NLB)를 자동으로 관리하고, 이를 통해 클러스터 내 애플리케이션을 외부로 노출
+- **ALB (Appication Load Balancer)**
+  - AWS Load Balancer Controller는 Kubernetes의 Ingress 리소스를 감시하여, 필요한 경우 ALB를 자동으로 생성하고 관리
+  - HTTP/HTTPS 트래픽을 여러 파드에 걸쳐 로드밸런싱할 수 있음
+- **NLB(Network Load Balancer)**
+  - Service 리소스의 `LoadBalancer` 타입을 감시하여, 필요 시 NLB를 생성하여 TCP/UDP 트래픽을 관리
+  - 낮은 지연 시간과 고성능이 요구되는 애플리케이션에 적합
 
 
 
+### Helm 활용하여, Load Balancer Controller 생성하기
+
+- Helm 설치
+
+  ```bash
+  $ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+  $ chmod 700 get_helm.sh
+  $ ./get_helm.sh
+  
+  $ helm --help
+  ```
+
+- Amazon EKS 클러스터 정보 수집 후 변수에 저장
+
+  - cluster_name : 클러스터 이름
+  - oidc_id : OIDC 자격증명 ID
+
+  ```bash
+  $ export cluster_name=demo-eks2
+  
+  $ aws eks describe-cluster --name demo-eks2 --query "cluster.identity.oidc.issuer" --output text | awk -F'/' '{print $NF}'
+  48B3841CB653AF271A7917B7C6EA3EC0
+  
+  $ export oidc_id=48B3841CB653AF271A7917B7C6EA3EC0
+  
+  $ echo $oidc_id
+  48B3841CB653AF271A7917B7C6EA3EC0
+  ```
+
+- AWS Load Balancer Controller 설치
+
+  - 참고 : https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/lbc-helm.html
 
 
 
+###### IAM 정책을 생성합니다.
+
+1. 사용자 대신 AWS API를 호출할 수 있는 AWS Load Balancer Controller의 IAM 정책을 다운로드합니다.
+
+   - AWS
+   - AWS GovCloud (US)
+
+   ```bash
+   $ curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.7.2/docs/install/iam_policy.json
+   ```
+
+2. 이전 단계에서 다운로드한 정책을 사용하여 IAM 정책을 만듭니다.
+
+   ```bash
+   $ aws iam create-policy \
+       --policy-name AWSLoadBalancerControllerIAMPolicy \
+       --policy-document file://iam_policy.json
+   ```
+
+   ![image-20241119150207968](assets/image-20241119150207968.png)
+
+3. `eksctl`을 사용하여 IAM 역할 생성
+   ![image-20241119151304689](assets/image-20241119151304689.png)
+
+   ```bash
+   $ eksctl create iamserviceaccount \
+     --cluster=demo-eks2 \
+     --namespace=kube-system \
+     --name=aws-load-balancer-controller \
+     --role-name AmazonEKSLoadBalancerControllerRole \
+     --attach-policy-arn=arn:aws:iam::699475938633:policy/AWSLoadBalancerControllerIAMPolicy \
+     --approve
+   ```
+
+4. 로드 밸런서 확인
+
+   ```bash
+   $ kubectl get sa -n kube-system | grep load
+   aws-load-balancer-controller                  0         48s
+   ```
+
+5. 로드밸런서 상세 확인
+
+   ```bash
+   $ kubectl describe -n kube-system sa aws-load-balancer-controller
+   Name:                aws-load-balancer-controller
+   Namespace:           kube-system
+   Labels:              app.kubernetes.io/managed-by=eksctl
+   Annotations:         eks.amazonaws.com/role-arn: arn:aws:iam::699475938633:role/AmazonEKSLoadBalancerControllerRole
+   Image pull secrets:  <none>
+   Mountable secrets:   <none>
+   Tokens:              <none>
+   Events:              <none>
+   ```
 
 
 
+### 2단계: AWS Load Balancer Controller 설치
+
+1. `eks-charts` 차트 Helm 리포지토리를 추가합니다. AWS에서는 [이 리포지토리](https://github.com/aws/eks-charts)를 GitHub에 유지합니다.
+
+   ```bash
+   $ helm repo add eks https://aws.github.io/eks-charts
+   ```
+
+2. 최신 차트가 적용되도록 로컬 리포지토리를 업데이트합니다.
+
+   ```bash
+   $ helm repo update eks
+   ```
+
+3. AWS Load Balancer Controller를 설치합니다.
+
+   `my-cluster`를 클러스터 이름으로 바꿉니다. 다음 명령에서 `aws-load-balancer-controller`는 이전 단계에서 생성한 Kubernetes 서비스 계정입니다.
+
+   차트 Helm 구성에 관한 자세한 내용은 GitHub에서 [`values.yaml`](https://github.com/aws/eks-charts/blob/master/stable/aws-load-balancer-controller/values.yaml)을 참조하세요.
+
+   ```bash
+   $ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+     -n kube-system \
+     --set clusterName=demo-eks2 \
+     --set serviceAccount.create=false \
+     --set serviceAccount.name=aws-load-balancer-controller 
+     
+   $ kubectl get pod -A
+   NAMESPACE     NAME                                           READY   STATUS    RESTARTS   AGE
+   kube-system   aws-load-balancer-controller-6b86b7dc4-hmn62   1/1     Running   0          64s
+   kube-system   aws-load-balancer-controller-6b86b7dc4-zsm9w   1/1     Running   0          64s
+   kube-system   aws-node-866x2                                 2/2     Running   0          62m
+   kube-system   aws-node-mptwj                                 2/2     Running   0          62m
+   kube-system   coredns-5b9dfbf96-57pz2                        1/1     Running   0          66m
+   kube-system   coredns-5b9dfbf96-wt4vl                        1/1     Running   0          66m
+   kube-system   kube-proxy-l64w6                               1/1     Running   0          62m
+   kube-system   kube-proxy-sv4vj                               1/1     Running   0          62m  
+   ```
+
+   1. [Amazon EC2 인스턴스 메타데이터 서비스(IMDS)에 대해 제한적인 액세스 권한](https://aws.github.io/aws-eks-best-practices/security/docs/iam/#restrict-access-to-the-instance-profile-assigned-to-the-worker-node)이 있는 Amazon EC2 노드에 컨트롤러를 배포하거나 Fargate에 배포하는 경우, 다음 `helm` 명령에 다음 플래그를 추가합니다.
+
+      - `--set region=region-code`
+      - `--set vpcId=vpc-xxxxxxxx`
+
+   2. 차트 Helm 및 로드 밸런서 컨트롤러의 사용 가능한 버전을 보려면 다음 명령을 사용합니다.
+
+      ```bash
+      helm search repo eks/aws-load-balancer-controller --versions
+      ```
 
 
 
+### NLB 서비스 예시
+
+- 쿠버네티스에서 AWS LoadBalancer Controller 설치한 상태에서 Service를 LoadBalancer로 하고, NLB 어노테이션과 함계 배포하게 되면, AWS LoadBalancer로 NLB가 생성됨.
+
+  - 샘플 애플리케이션을 배포 실습(1)
+
+    - https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/network-load-balancing.html
+
+    - 샘플 애플리케이션을 배포합니다.
+
+      1. 애플리케이션에 대한 네임스페이스를 생성합니다.
+
+         ```bash
+         $ kubectl create namespace nlb-sample-app
+         ```
+
+      2. 다음 콘텐츠를 컴퓨터에서 `sample-deployment.yaml`이라는 파일에 저장합니다.
+
+         ```bash
+         apiVersion: apps/v1
+         kind: Deployment
+         metadata:
+           name: nlb-sample-app
+           namespace: nlb-sample-app
+         spec:
+           replicas: 3
+           selector:
+             matchLabels:
+               app: nginx
+           template:
+             metadata:
+               labels:
+                 app: nginx
+             spec:
+               containers:
+                 - name: nginx
+                   image: public.ecr.aws/nginx/nginx:1.23
+                   ports:
+                     - name: tcp
+                       containerPort: 80
+         ```
+
+      3. 매니페스트를 클러스터에 적용합니다.
+
+         ```bash
+         $ kubectl apply -f sample-deployment.yaml
+         
+         $ kubectl get pod -n nlb-sample-app
+         NAME                             READY   STATUS    RESTARTS   AGE
+         nlb-sample-app-fccbb75cd-49czc   1/1     Running   0          16s
+         nlb-sample-app-fccbb75cd-t4x22   1/1     Running   0          16s
+         nlb-sample-app-fccbb75cd-zzzdf   1/1     Running   0          16s
+         ```
+
+    - IP 대상에 대한 로드 밸런싱을 수행하는 인터넷이 연결된 Network Load Balancer를 사용하여 서비스를 생성합니다.
+
+      1. 다음 콘텐츠를 컴퓨터에서 `sample-service.yaml`이라는 파일에 저장합니다. Fargate 노드에 배포하는 경우 `service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing` 줄을 제거합니다.
+
+         ```
+         apiVersion: v1
+         kind: Service
+         metadata:
+           name: nlb-sample-service
+           namespace: nlb-sample-app
+           annotations:
+             service.beta.kubernetes.io/aws-load-balancer-type: external
+             service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+             service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+         spec:
+           ports:
+             - port: 80
+               targetPort: 80
+               protocol: TCP
+           type: LoadBalancer
+           selector:
+             app: nginx
+         ```
+
+      2. 매니페스트를 클러스터에 적용합니다.
+
+         ```bash
+         $ kubectl apply -f sample-service.yaml
+         ```
+
+    - 서비스가 배포되었는지 확인합니다.
+
+      ```bash
+      $ kubectl get svc nlb-sample-service -n nlb-sample-app
+      NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+      nlb-sample-service   LoadBalancer   10.100.52.77   <pending>     80:31998/TCP   2m41s
+      
+      ??? 왜 EXTERNAL-IP가 <pending> 이지?
+      ```
+
+      ![image-20241119154023931](assets/image-20241119154023931.png)
 
 
 
+### ??? 왜 EXTERNAL-IP가 < pending > 이지?
 
+서비스에 대한 상태를 확인 했을때 `elasticloadbalancing:DescribeListenerAttributes` 설정이 적용되지 않았음을 확인
 
+```bash
+$ kubectl describe service nlb-sample-service -n nlb-sample-app
+Name:                     nlb-sample-service
+Namespace:                nlb-sample-app
+Labels:                   <none>
+Annotations:              service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+                          service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+                          service.beta.kubernetes.io/aws-load-balancer-type: external
+Selector:                 app=nginx
+Type:                     LoadBalancer
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.100.140.174
+IPs:                      10.100.140.174
+Port:                     <unset>  80/TCP
+TargetPort:               80/TCP
+NodePort:                 <unset>  30316/TCP
+Endpoints:                192.168.13.142:80,192.168.39.222:80,192.168.60.106:80
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Internal Traffic Policy:  Cluster
+Events:
+  Type     Reason             Age                From     Message
+  ----     ------             ----               ----     -------
+  Warning  FailedDeployModel  12m                service  Failed deploy model due to operation error Elastic Load Balancing v2: DescribeListenerAttributes, https response error StatusCode: 403, RequestID: 8ec2ef8b-d2a3-451b-b6f6-d82f2d4b0a0e, api error AccessDenied: User: arn:aws:sts::699475938633:assumed-role/AmazonEKSLoadBalancerControllerRole/1731998270212853240 is not authorized to perform: elasticloadbalancing:DescribeListenerAttributes because no identity-based policy allows the elasticloadbalancing:DescribeListenerAttributes action
+```
 
+#### AWS AmazonEKSLoadBalancerControllerRole policy 확인
 
+```bash
+$ aws iam list-attached-role-policies --role-name AmazonEKSLoadBalancerControllerRole
 
+# 해당 설정이 미설정 되어 있는 것을 확인
+$ curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.7.2/docs/install/iam_policy.json
 
+# "elasticloadbalancing:DescribeListenerAttributes" 설정 추가
+$ vi iam_policy.json
 
+# aws-load-balancer-controller 재실행
+$ kubectl rollout restart deployment/aws-load-balancer-controller -n kube-system
+deployment.apps/aws-load-balancer-controller restarted
 
+# SVC 삭제 후 다시 생성
+$ kubectl delete -f sample-service.yaml
+service "nlb-sample-service" deleted
+$ kubectl apply -f sample-service.yaml
+service/nlb-sample-service created
 
+# 확인 정상적으로 적용 되어 있는 것을 확인
+$ kubectl get svc -n nlb-sample-app
+NAME                 TYPE           CLUSTER-IP      EXTERNAL-IP                                                                          PORT(S)        AGE
+nlb-sample-service   LoadBalancer   10.100.158.20   k8s-nlbsampl-nlbsampl-4b49d9802a-ae6edaaba130a871.elb.ap-northeast-2.amazonaws.com   80:30884/TCP   3s
+```
 
+리소스에도 대상 nginx 정상적으로 적용되어 있는 것을 확인
 
+![image-20241119163132738](assets/image-20241119163132738.png)
 
+dns 정보로 nginx 확인 결과 정상적으로 3개중 하나의 연동 되는걸 확인
 
+![image-20241119163243453](assets/image-20241119163243453.png)
 
+### ALB 서비스
 
+- 참고 : https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/alb-ingress.html
 
+- **파드 배포 및 Ingress 배포**
 
+  ```bash
+  $ curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.7.2/docs/examples/2048/2048_full.yaml
+  
+  # replicas 5 -> 2개로 설정
+  $ vi 2048_full.yaml
+  
+  $ kubectl apply -f 2048_full.yaml 
+  namespace/game-2048 created
+  deployment.apps/deployment-2048 created
+  service/service-2048 created
+  ingress.networking.k8s.io/ingress-2048 created
+  
+  $ kubectl get pod -n game-2048
+  NAME                              READY   STATUS    RESTARTS   AGE
+  deployment-2048-85f8c7d69-ccfmp   1/1     Running   0          68s
+  deployment-2048-85f8c7d69-krjpd   1/1     Running   0          68s
+  
+  $ kubectl get pod -n game-2048 -o wide
+  NAME                              READY   STATUS    RESTARTS   AGE   IP               NODE                                                NOMINATED NODE   READINESS GATES
+  deployment-2048-85f8c7d69-ccfmp   1/1     Running   0          73s   192.168.51.249   ip-192-168-39-247.ap-northeast-2.compute.internal   <none>           <none>
+  deployment-2048-85f8c7d69-krjpd   1/1     Running   0          73s   192.168.30.27    ip-192-168-10-42.ap-northeast-2.compute.internal    <none>           <none>
+  
+  $ kubectl get svc -n game-2048 -o wide
+  NAME           TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE   SELECTOR
+  service-2048   NodePort   10.100.231.78   <none>        80:31143/TCP   86s   app.kubernetes.io/name=app-2048
+  
+  $ kubectl get Ingress -n game-2048 -o wide
+  NAME           CLASS   HOSTS   ADDRESS                                                                        PORTS   AGE
+  ingress-2048   alb     *       k8s-game2048-ingress2-ec2deb2d65-1343230107.ap-northeast-2.elb.amazonaws.com   80      105s
+  
+  $ kubectl describe -n game-2048 ingress ingress-2048
+  Name:             ingress-2048
+  Labels:           <none>
+  Namespace:        game-2048
+  Address:          k8s-game2048-ingress2-ec2deb2d65-1343230107.ap-northeast-2.elb.amazonaws.com
+  Ingress Class:    alb
+  Default backend:  <default>
+  Rules:
+    Host        Path  Backends
+    ----        ----  --------
+    *           
+                /   service-2048:80 (192.168.51.249:80,192.168.30.27:80)
+  Annotations:  alb.ingress.kubernetes.io/scheme: internet-facing
+                alb.ingress.kubernetes.io/target-type: ip
+  Events:
+    Type    Reason                  Age    From     Message
+    ----    ------                  ----   ----     -------
+    Normal  SuccessfullyReconciled  2m56s  ingress  Successfully reconciled
+    
+  $ kubectl get targetgroupbinding -n game-2048
+  NAME                               SERVICE-NAME   SERVICE-PORT   TARGET-TYPE   AGE
+  k8s-game2048-service2-079e8fd7a5   service-2048   80             ip            4m40s  
+  ```
 
+  정상 생성
 
+  ![image-20241119165019725](assets/image-20241119165019725.png)
 
+![image-20241119165033466](assets/image-20241119165033466.png)
 
+정상 작동도 확인
+
+![image-20241119165133205](assets/image-20241119165133205.png)
+
+## 서비스 삭제하기
+
+### 로드 밸런서 삭제
+
+![image-20241119165250845](assets/image-20241119165250845.png)
+
+### 서비스와 네임스페이스 삭제
+
+```bash
+ubuntu@ip-172-31-13-134:~$ kubectl get ns
+NAME              STATUS   AGE
+default           Active   154m
+game-2048         Active   8m39s
+kube-node-lease   Active   154m
+kube-public       Active   154m
+kube-system       Active   154m
+nlb-sample-app    Active   79m
+ubuntu@ip-172-31-13-134:~$ kubectl delete ns nlb-sample-app --force
+Warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+namespace "nlb-sample-app" force deleted
+ubuntu@ip-172-31-13-134:~$ kubectl delete ns game-2048 --force
+Warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+namespace "game-2048" force deleted
+ubuntu@ip-172-31-13-134:~$ kubectl get ns
+NAME              STATUS   AGE
+default           Active   155m
+kube-node-lease   Active   155m
+kube-public       Active   155m
+kube-system       Active   155m
+```
+
+### 클러스터 삭제
+
+Amazon EKS 클러스터를 삭제하려면 다음 단계를 따라 진행하면 됩니다. 삭제 작업은 클러스터 및 관련 리소스를 정리하는 데 필요한 모든 단계를 포함합니다.
+
+#### 삭제전 확인 할 수 있는 명령어
+
+#### 1. **클러스터 이름 확인**
+
+클러스터 이름을 확인하려면 다음 명령어를 사용하세요:
+
+```
+eksctl get clusters
+```
+
+#### 2.**노드 그룹 이름 확인**
+
+```
+eksctl get nodegroup --cluster <클러스터 이름>
+```
+
+---
+
+#### 삭제 절차
+
+#### 1. **노드 그룹 삭제**
+
+먼저 클러스터에 연결된 노드 그룹을 삭제해야 합니다.
+
+```bash
+eksctl delete nodegroup --cluster <클러스터 이름> --name <노드 그룹 이름>
+```
+
+##### 확인:
+
+노드 그룹 삭제 후에도 EC2 인스턴스나 Auto Scaling Group이 남아 있는지 확인합니다.  
+남아 있다면 AWS Management Console 또는 CLI를 통해 수동으로 삭제합니다:
+```bash
+aws ec2 terminate-instances --instance-ids <인스턴스 ID>
+aws autoscaling delete-auto-scaling-group --auto-scaling-group-name <ASG 이름> --force-delete
+```
+
+---
+
+#### 2. **클러스터 삭제**
+노드 그룹이 삭제되었으면 클러스터를 삭제합니다.
+
+```bash
+eksctl delete cluster --name <클러스터 이름>
+```
+
+---
+
+#### 3. **로드 밸런서 및 보조 리소스 삭제**
+EKS 클러스터에 의해 생성된 로드 밸런서와 관련 리소스를 삭제합니다.
+
+##### 확인 및 삭제 방법:
+- **로드 밸런서 삭제**
+  ```bash
+  aws elbv2 describe-load-balancers
+  aws elbv2 delete-load-balancer --load-balancer-arn <로드 밸런서 ARN>
+  ```
+
+- **타겟 그룹 삭제**
+  ```bash
+  aws elbv2 describe-target-groups
+  aws elbv2 delete-target-group --target-group-arn <타겟 그룹 ARN>
+  ```
+
+---
+
+#### 4. **IAM 리소스 삭제**
+EKS와 관련된 IAM 역할 및 정책을 삭제해야 합니다.
+
+##### 4.1 IAM 역할 제거
+
+```bash
+aws iam delete-role --role-name <IAM 역할 이름>
+```
+
+##### 4.2 IAM 정책 제거
+```bash
+aws iam delete-policy --policy-arn <정책 ARN>
+```
+
+---
+
+#### 5. **VPC 및 서브넷 삭제**
+EKS는 VPC와 서브넷을 사용하므로, 사용하지 않는 경우 삭제합니다.
+
+##### 5.1 VPC 확인
+```bash
+aws ec2 describe-vpcs --filters "Name=tag:aws:eks:cluster-name,Values=<클러스터 이름>"
+```
+
+##### 5.2 VPC 삭제
+```bash
+aws ec2 delete-vpc --vpc-id <VPC ID>
+```
+
+##### 5.3 서브넷 삭제
+```bash
+aws ec2 delete-subnet --subnet-id <서브넷 ID>
+```
+
+---
+
+#### 6. **추가로 확인해야 할 리소스**
+다음 리소스도 남아 있는지 확인하고 삭제합니다:
+- **Security Groups**: `aws ec2 delete-security-group --group-id <Security Group ID>`
+- **Elastic IPs**: `aws ec2 release-address --allocation-id <Elastic IP ID>`
+- **Elastic Block Store (EBS) 볼륨**: `aws ec2 delete-volume --volume-id <볼륨 ID>`
+- **CloudWatch 로그 그룹**: `aws logs delete-log-group --log-group-name <로그 그룹 이름>`
+
+---
+
+#### 7. **정리 완료 확인**
+모든 관련 리소스를 삭제한 후 AWS Management Console에서 리소스가 남아 있지 않은지 확인합니다.
+
+---
+
+### EC2 인스턴스 중지
+
+![image-20241119180038448](assets/image-20241119180038448.png)
