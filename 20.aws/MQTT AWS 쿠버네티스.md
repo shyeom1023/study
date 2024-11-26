@@ -74,27 +74,19 @@ AWS에서 쿠버네티스를 관리하기 위해 **Bastion 서버**를 설정하
    - AWS CLI 명령어로 클러스터 인증을 받습니다.
 
      ```
-     bash
-     
-     
-     코드 복사
      aws eks update-kubeconfig --name <EKS_Cluster_Name> --region <Region>
      ```
-
+     
    - 위 명령어를 통해 `kubeconfig` 파일이 업데이트되면, Bastion 서버에서 `kubectl` 명령어를 사용하여 쿠버네티스 클러스터를 제어할 수 있게 됩니다.
-
+   
 6. **로컬에서 Bastion 서버를 통한 클러스터 접근 (SSH 터널링)**
 
    - 로컬에서 직접 접근하는 대신, Bastion 서버를 거쳐 클러스터에 접근하고자 할 때 SSH 터널링을 활용할 수 있습니다.
 
      ```
-     bash
-     
-     
-     코드 복사
      ssh -i <Your_Key.pem> -L 6443:<EKS_API_Server_Endpoint>:443 ec2-user@<Bastion_Server_IP>
      ```
-
+     
    - 터널링이 설정되면 `kubectl` 명령어로 로컬에서도 클러스터를 관리할 수 있습니다.
 
 ### Bastion 서버의 주요 활용
@@ -321,6 +313,7 @@ https://youtu.be/uGhCjaExw0M?si=L7S418mQCznhZnNE
 
   - Node 인스턴스 타입 : 
     - t3.medium => 이건 free trier가 아닌거 같아 확인 필요
+    - t2.micro => free trier로 도전
   - 노드 수 : 2
   - 노트 볼륨 크기 : 20G
   - 노드그룹 적용 가용 영역 : ap-northeast=2a, ap-northeast=2c. 생량 시 전체 가용영역 사용
@@ -329,13 +322,13 @@ https://youtu.be/uGhCjaExw0M?si=L7S418mQCznhZnNE
 
 - ```bash
   $ eksctl create cluster \
-  --name demo-eks2 \
+  --name demo-eks \
   --region ap-northeast-2 \
   --with-oidc \
   --nodegroup-name demo-ng \
   --zones ap-northeast-2a,ap-northeast-2c \
   --nodes 2 \
-  --node-type t3.medium \
+  --node-type t2.micro \
   --node-volume-size=20 \
   --managed
   2024-11-15 05:49:57 [ℹ]  eksctl version 0.194.0
@@ -963,7 +956,8 @@ eksctl get nodegroup --cluster <클러스터 이름>
 먼저 클러스터에 연결된 노드 그룹을 삭제해야 합니다.
 
 ```bash
-eksctl delete nodegroup --cluster <클러스터 이름> --name <노드 그룹 이름>
+#eksctl delete nodegroup --cluster <클러스터 이름> --name <노드 그룹 이름>
+$ eksctl delete nodegroup --cluster demo-eks --name demo-ng
 ```
 
 ##### 확인:

@@ -1,5 +1,173 @@
 # AWS
 
+## AWS CLI 설치 및 AWS ECR 이미지 업로드
+
+---
+
+### 1. **사전 준비**
+- **AWS CLI 설치 및 설정**
+  - [AWS CLI 설치 가이드](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)에 따라 AWS CLI를 설치합니다.
+  - 설치 후, 명령 프롬프트를 열고 AWS CLI를 설정합니다:
+    ```bash
+    aws configure
+    ```
+    - AWS Access Key ID, Secret Access Key, Default region을 입력합니다.
+
+- **Docker 설치**
+  - [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)를 설치합니다.
+  - Docker Desktop 실행 후 Docker가 정상적으로 실행 중인지 확인합니다:
+    ```bash
+    docker --version
+    ```
+
+---
+
+### 2. **AWS ECR 인증**
+1. **ECR 로그인**
+   ECR 리포지토리에 Docker를 인증합니다. 명령 프롬프트를 열고 다음 명령을 실행합니다:
+   ```bash
+   #aws ecr get-login-password --region <리전> | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.<리전>.amazonaws.com
+   
+   $ aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin stdin 699475938633.dkr.ecr.ap-northeast-2.amazonaws.com
+   ```
+   - `<리전>`: AWS 리전 (예: `ap-northeast-2`)
+   - `<AWS_ACCOUNT_ID>`: AWS 계정 ID
+
+---
+
+### 3. **Docker 이미지 빌드**
+1. **Dockerfile 준비**
+   로컬 디렉터리에 `Dockerfile`을 준비합니다. 예를 들어, 간단한 Nginx Dockerfile:
+   ```dockerfile
+   FROM openjdk:17-jdk-slim
+   
+   WORKDIR /app
+   
+   # 빌드된 JAR 파일을 복사
+   COPY build/libs/*.jar app.jar
+   
+   # 포트 설정
+   EXPOSE 8080
+   
+   # 애플리케이션 실행
+   ENTRYPOINT ["java", "-jar", "app.jar"]
+   ```
+   
+2. **Docker 이미지 빌드**
+   Dockerfile이 있는 디렉터리에서 명령 프롬프트를 열고:
+   ```bash
+   # docker build -t <이미지_이름>:<태그> .
+   $ docker build -t demo/mqtt .
+   
+   $ docker images
+   REPOSITORY                       TAG       IMAGE ID       CREATED         SIZE
+   demo/mqtt                        latest    6d9d094621cb   7 minutes ago   443MB
+   my-kotlin-app                    latest    6d9d094621cb   7 minutes ago   443MB
+   grafana/grafana-image-renderer   latest    ee9bfc455e2e   5 months ago    1.17GB
+   influxdb                         latest    26438989c210   5 months ago    376MB
+   nginx                            latest    dde0cca083bc   5 months ago    188MB
+   grafana/grafana                  latest    f9095e2f0444   6 months ago    443MB
+   busybox                          latest    65ad0d468eb1   18 months ago   4.26MB
+   csh0034/mosquitto                latest    ac9b2f8c9fd7   2 years ago     11.8MB
+   ```
+   - `<이미지_이름>`: 이미지 이름 (예: `sample-app`)
+   - `<태그>`: 태그 이름 (예: `latest`)
+
+---
+
+### 4. **ECR 리포지토리 생성**
+1. **리포지토리 생성**
+   ECR 리포지토리를 생성합니다:
+   ```bash
+   $ aws ecr create-repository --repository-name <리포지토리_이름> --region <리전>
+   ```
+   - `<리포지토리_이름>`: 원하는 리포지토리 이름
+   - 결과에서 `repositoryUri`를 확인합니다.
+
+2. **기존 리포지토리 확인**
+   ```bash
+   #aws ecr describe-repositories --region <리전>
+   
+   $ aws ecr describe-repositories --region ap-northeast-2
+   ```
+
+---
+
+### 5. **이미지 태깅 및 업로드**
+1. **이미지 태깅**
+   빌드한 이미지를 ECR 리포지토리 URI에 태깅합니다:
+   ```bash
+   # docker tag <이미지_이름>:<태그> <AWS_ACCOUNT_ID>.dkr.ecr.<리전>.amazonaws.com/<리포지토리_이름>:<태그>
+   $ docker tag demo/mqtt:latest 699475938633.dkr.ecr.ap-northeast-2.amazonaws.com/demo/mqtt:latest
+   ```
+   
+2. **이미지 업로드**
+   ECR에 이미지를 푸시합니다:
+   ```bash
+   # docker push <AWS_ACCOUNT_ID>.dkr.ecr.<리전>.amazonaws.com/<리포지토리_이름>:<태그>
+   $ docker push 699475938633.dkr.ecr.ap-northeast-2.amazonaws.com/demo/mqtt:latest
+   ```
+
+---
+
+### 6. **ECR에서 이미지 확인**
+ECR에 업로드된 이미지를 확인하려면:
+```bash
+# aws ecr list-images --repository-name <리포지토리_이름> --region <리전>
+$ aws ecr list-images --repository-name demo/mqtt --region ap-northeast-2
+{
+    "imageIds": [
+        {
+            "imageDigest": "sha256:73c6e7d9636ae215c4be5be453a32b1469017771a87dd57448ebefeb3ca68a52",
+            "imageTag": "latest"
+        }
+    ]
+}
+```
+
+![image-20241120113347793](assets/image-20241120113347793.png)
+
+---
+
+### 7. **예제 전체 명령**
+1. **리포지토리 생성**
+   ```bash
+   aws ecr create-repository --repository-name my-sample-app --region ap-northeast-2
+   ```
+
+2. **Docker 빌드**
+   ```bash
+   docker build -t my-sample-app:latest .
+   ```
+
+3. **태깅**
+   ```bash
+   docker tag my-sample-app:latest <AWS_ACCOUNT_ID>.dkr.ecr.ap-northeast-2.amazonaws.com/my-sample-app:latest
+   ```
+
+4. **푸시**
+   ```bash
+   docker push <AWS_ACCOUNT_ID>.dkr.ecr.ap-northeast-2.amazonaws.com/my-sample-app:latest
+   ```
+
+---
+
+### 8. **참고**
+- **Windows 환경에서 파일 경로 문제**
+  Dockerfile 경로 또는 파일 참조 시 백슬래시(`\`) 대신 슬래시(`/`)를 사용하세요.
+  예: `COPY .\html /usr/share/nginx/html` → `COPY ./html /usr/share/nginx/html`
+
+- **권한 오류 발생 시**
+  - IAM 정책에 ECR 관련 권한을 추가해야 할 수 있습니다. `AmazonEC2ContainerRegistryFullAccess` 정책을 확인하세요.
+
+이 과정을 따르면 Windows 로컬 환경에서도 ECR에 이미지를 성공적으로 업로드할 수 있습니다. 😊
+
+
+
+
+
+
+
 ## EKS 종료시 아래 내용이 멀까?
 
 돈이 많이 나올까바 인스턴스를 중지하고 싶은데, 그냥 bastion 서버 종료하는건 상관없지만, eks node group을 삭제 할땐 이상한 경고가 발생
