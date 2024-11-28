@@ -106,6 +106,9 @@
    ```bash
    # docker push <AWS_ACCOUNT_ID>.dkr.ecr.<리전>.amazonaws.com/<리포지토리_이름>:<태그>
    $ docker push 699475938633.dkr.ecr.ap-northeast-2.amazonaws.com/demo/mqtt:latest
+   
+   # push가 권한이 없으면 아래와 같이 적용하면 된다.
+   $ aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 699475938633.dkr.ecr.ap-northeast-2.amazonaws.com
    ```
 
 ---

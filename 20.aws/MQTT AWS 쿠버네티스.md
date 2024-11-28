@@ -975,7 +975,8 @@ aws autoscaling delete-auto-scaling-group --auto-scaling-group-name <ASG 이름>
 노드 그룹이 삭제되었으면 클러스터를 삭제합니다.
 
 ```bash
-eksctl delete cluster --name <클러스터 이름>
+# eksctl delete cluster --name <클러스터 이름>
+$ eksctl delete cluster --name demo-eks
 ```
 
 ---
