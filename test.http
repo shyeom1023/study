@@ -1,0 +1,8 @@
+### publish2
+POST {{url}}/publish
+Content-Type: application/json
+
+{
+  "topic": "d",
+  "message": "{\"title\" : \"MattApp\", \"content\": \"content22\"}"
+}
